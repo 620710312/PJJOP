@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import "package:http/http.dart" as http;
+import "dart:convert";
 void main() {
   runApp(const MyApp());
 }
@@ -34,12 +35,32 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _inputcontroller = TextEditingController();
+  String word = '';
+  String final_word = '';
   final _resultcontroller = TextEditingController();
+
   void clearText() {
     _inputcontroller.clear();
     _resultcontroller.clear();
   }
-
+  Future<void> fetchapi(String text) async{
+    var url = Uri.parse("http://localhost:8080/text");
+    var body = {"text":text};
+    final response = await http.post(url,body:jsonEncode(body),headers: {"Content-Type":"application/json"});
+    if(response.statusCode==200){
+      if(response.body!=null){
+        Map<String,dynamic> jsonbody = json.decode(response.body);
+        print(jsonbody);
+        setState(() {
+          _resultcontroller.text = jsonbody["text"];
+        });
+      }else{
+        throw "Error";
+      }
+    }else{
+      throw "Error";
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,7 +97,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'กรอกข้อความของคุณ',
+                        'กรอกข้อความที่ได้จากการรู้จำอักขระ',
                         style: TextStyle(
                             fontSize: 30.0, color: Colors.brown.shade500),
                       ),
@@ -86,14 +107,14 @@ class _HomePageState extends State<HomePage> {
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextField(
+                child: TextFormField(
                   textAlign: TextAlign.center,
                   controller: _inputcontroller,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.7),
                     border: OutlineInputBorder(),
-                    hintText: 'ใส่ข้อความของคุณที่นี่',
+                    hintText: 'ใส่ข้อความจากการรู้จำอักขระของคุณที่นี่',
                   ),
                 ),
               ),
@@ -104,7 +125,8 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
                     child: Text('แก้ไข'),
-                    onPressed: () {
+                    onPressed: ()  {
+                       fetchapi(_inputcontroller.text);
                     }),
               ),
               Padding(
@@ -130,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                   child: ElevatedButton(
                       child: Text('คัดลอก'),
                       onPressed: () {
-                        final answer = ClipboardData(text: 'คำตอบนะค่ะ');
+                        final answer = ClipboardData(text: _resultcontroller.text);
                         Clipboard.setData(answer);
                       }),
                 ),
